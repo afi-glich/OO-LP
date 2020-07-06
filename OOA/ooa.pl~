@@ -7,18 +7,9 @@
 %
 
 %%%% Implementazione
-%
-%   cose utili
-%   remove-duplicates
-%
-%
-%
-%
-%
-%%
 
 %%%% Define class (classname, parents, slot value)
-% usare assert per salvare nella base di dati
+% usare assert per salvare nella base di dati+
 
 define_class(Name, Parents, Slots) :-
     assert(class(Name, Parents, Slots)).
