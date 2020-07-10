@@ -1,4 +1,4 @@
-	Membri gruppo
+Membri gruppo
 
 Saeed Afifa 835367
 Verità Matteo 829615
