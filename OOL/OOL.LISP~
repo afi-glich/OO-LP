@@ -17,14 +17,17 @@
 
 ;; manca da aggiungere la definizione di slot value a cui procedere dopo aver definito tutte le primitive fino a is_instance
 
-(defun define-class (class-name parents)
+(defun define-class (class-name parents &rest slot-values)
+  (remove-duplicates parents)
   (cond ((not (symbolp class-name))
              (error "Class name not valid."))
         ((not (listp parents))
              (error "Parents must be a list"))
-        ;; rimuovere inoltre duplicati dalla lista dei parents e ritornare errore se nella lista sono presenti
-        ;; classi non definite.
-        (T (add-class-spec class-name (list parents)))
+        ((is-class class-name)
+         (error "Class already exists"))
+        ((null (validate-parents parents))
+         (error "Parents list is not valid"))
+        (T (add-class-spec class-name (list parents slot-values)))))
 
 
 ;; NEW
@@ -61,22 +64,22 @@
 
 ;; verify if all the parents in the list are classes already exists
 
+(defun validate-parents (parents)
+  (cond ((null parents) NIL)
+        ((not(is-class (first parents)))
+          NIL)
+        (T (validate-parents (rest parents)))))
 
+;; verifico se la lista dei slots è pari. In caso affermativo, creo una associazione tra 
+;; slot name e slot
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+(defun validate-slots (slots)
+  (cond ((oddp (length slots))
+         (error "Slots list is not valid"))
+        (T
+         (if (symbolp (first slots))
+             (append (list (list (first slots) (second slots))
+                   (validate-slots (rest slots))))
+           (append (list (validate-slots (rest slots))))))))
 
 

@@ -15,8 +15,6 @@
 
 ;; DEFINE CLASS
 
-;; manca da aggiungere la definizione di slot value a cui procedere dopo aver definito tutte le primitive fino a is_instance
-
 (defun define-class (class-name parents &rest slot-values)
   (remove-duplicates parents)
   (cond ((not (symbolp class-name))
@@ -25,18 +23,21 @@
              (error "Parents must be a list"))
         ((is-class class-name)
          (error "Class already exists"))
-        ((null (validate-parents parents))
-         (error "Parents list is not valid"))
-        ;; rimuovere inoltre duplicati dalla lista dei parents e ritornare errore se nella lista sono presenti
-        ;; classi non definite.
-        (T (add-class-spec class-name (list parents)))))
+        ((validate-parents parents)
+         (error "Parents list not valid"))
+        (T
+         (let (valori (validate-slots slot-values))
+         (add-class-spec class-name (list parents valori))))))
 
 
 ;; NEW
 
-; aggiungere la parte dei slot appena verrà implementata in define class.
+; mettere il controllo per verificare che i slot selezionati sono parte della definizione della classe.
+;; passi da swguire: 
+;; 1) estrarre la lista degli slot dalla defizione di classe
+;; 2) cercare i slot interessati e nel caso venga trovato anche uno solo non conforme, ritornare errore.
 
-(defun new (class-name)
+(defun new (class-name &rest slot-values)
   (cond ((not (symbolp class-name))
               (error "Class name not valid"))
         ((is-class class-name)
@@ -69,23 +70,21 @@
 (defun validate-parents (parents)
   (cond ((null parents) NIL)
         ((not(is-class (first parents)))
-          NIL)
+         T)
         (T (validate-parents (rest parents)))))
 
+;; verifico se la lista dei slots è pari. In caso affermativo, creo una associazione tra 
+;; slot name e slot
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+(defun validate-slots (slots)
+  (cond ((oddp (length slots))
+         (error "Slot list is not complete"))
+        ((= 2 (length slots))
+         (append (list (list (first slots) (second slots)))))
+        (T
+         (if (symbolp (first slots))
+             (append (list (list (first slots) (second slots)))
+                   (validate-slots (rest (rest slots))))
+           (error "Slot name not valid")))))
 
 
