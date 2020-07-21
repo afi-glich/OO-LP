@@ -3,28 +3,17 @@
 
 %%%% Membri del gruppo
 %%%% Saeed Afifa 835367
-%%%% Verità Matteo 829615
 %
 
-%%%% Implementazione
-%
-%   cose utili
-%   remove-duplicates
-%
-%
-%
-%
-%
-%%
 
 %%%% Define class (classname, parents, slot value)
-% usare assert per salvare nella base di dati
 
 define_class(Name, Parents, Slots) :-
     atom(Name),
     remove_duplicates(Parents, NewParents),
     validate_parents(NewParents, ParentsValidated),
-    assert(class(Name, ParentsValidated, Slots)).
+    assertz(superclass(ParentsValidated)),
+    assertz(class(Name, Slots)).
 
 %%%% rimuove duplicati
 
@@ -66,8 +55,7 @@ is_instance(Instance_name) :-
 %%%% inst
 
 inst(Instance_name, Instance) :-
-    instance(Instance_name, _),
-    Instance = instance(Instance_name, _).
+    Instance == instance(Instance_name, _).
 
 
 

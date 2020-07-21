@@ -15,7 +15,7 @@
 
 ;; DEFINE CLASS
 
-(defun define-class (class-name parents &rest slot-values)
+(defun define-class (class-name parents &rest slot-value)
   (remove-duplicates parents)
   (cond ((not (symbolp class-name))
              (error "Class name not valid."))
@@ -25,24 +25,22 @@
          (error "Class already exists"))
         ((validate-parents parents)
          (error "Parents list not valid"))
-        (T
-         (let (valori (validate-slots slot-values))
-         (add-class-spec class-name (list parents valori))))))
+        (T (print (validate-slots (car slot-value)))
+           (add-class-spec class-name (list parents (validate-slots (car slot-value)))))))
 
 
 ;; NEW
 
-; mettere il controllo per verificare che i slot selezionati sono parte della definizione della classe.
-;; passi da swguire: 
-;; 1) estrarre la lista degli slot dalla defizione di classe
-;; 2) cercare i slot interessati e nel caso venga trovato anche uno solo non conforme, ritornare errore.
-
 (defun new (class-name &rest slot-values)
   (cond ((not (symbolp class-name))
               (error "Class name not valid"))
-        ((is-class class-name)
+        ((null (is-class class-name))
          (error "Class does not exist"))
-        (T (append (list 'oolinst class-name)))))
+        (T 
+         (append (list 'oolinst class-name (validate-slots slot-values))))))
+
+
+;;verifica se tutti gli slot sono gia presenti nella classe
 
 
 
@@ -61,17 +59,50 @@
 
 (defun is-instance (value &optional (class-name T))
   (cond ((eql class-name T)
-         (print value))
-        (T NIL)))
+        (if (not (eql (first value) 'oolinst))
+            nil
+          T))
+        (T (if (and (eql (first value) 'oolinst)
+                    (eql (second value) class-name))
+               T
+             nil))))
+
+
+;; <<
+
+(defun << (instance slot-name)
+  (find-s (car (third instance)) slot-name))
+
+
+
+;; verifica se lo slot name è presente tra i parameteri della istanza
+
+(defun find-s (slots slot-name)
+  (cond ((null slots)
+         (error "nessun parametro trovato nell'istanza"))
+        (T (if (equalp (first slots) slot-name)
+               (second slots)
+             (find (rest (rest slots)) slot-name)))))
+           
+
 
 
 ;; verify if all the parents in the list are classes already exists
 
 (defun validate-parents (parents)
   (cond ((null parents) NIL)
-        ((not(is-class (first parents)))
+        ((not (is-class (first parents)))
          T)
         (T (validate-parents (rest parents)))))
+
+
+;; funzione che permette di recuperare tutti gli slots dei parents
+;; in modo da inserirli nella nuova classe appena creata.
+
+(defun get-all-parents-slots (parents)
+  (append (list (second (get-classs-specs (first parents)))
+                (get-all-parents-slots (rest parents)))))
+
 
 ;; verifico se la lista dei slots è pari. In caso affermativo, creo una associazione tra 
 ;; slot name e slot
