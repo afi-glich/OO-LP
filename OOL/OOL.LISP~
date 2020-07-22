@@ -16,7 +16,6 @@
 ;; DEFINE CLASS
 
 (defun define-class (class-name parents &rest slot-value)
-  (remove-duplicates parents)
   (cond ((not (symbolp class-name))
              (error "Class name not valid."))
         ((not (listp parents))
@@ -26,22 +25,33 @@
         ((validate-parents parents)
          (error "Parents list not valid"))
         (T (print (validate-slots (car slot-value)))
-           (add-class-spec class-name (list parents (validate-slots (car slot-value)))))))
+           (add-class-spec class-name (list parents 
+                                            (validate-slots (car slot-value)))))))
 
 
 ;; NEW
 
 (defun new (class-name &rest slot-values)
+(print slot-values)
+(print (second (get-class-spec class-name)))
   (cond ((not (symbolp class-name))
               (error "Class name not valid"))
         ((null (is-class class-name))
          (error "Class does not exist"))
-        (T 
-         (append (list 'oolinst class-name (validate-slots slot-values))))))
+        (T
+         (if (find-slots (second (get-class-spec class-name)) slot-values)
+             (append (list 'oolinst class-name (validate-slots (car slot-values))))
+           (error "Slots not valid.")))))
 
+;; cerca che tutti gli slot della lista specificata in new sono effettivamente slots 
+;; della classe. Se non li trova allora li cerca tra i parents. 
 
-;;verifica se tutti gli slot sono gia presenti nella classe
-
+(defun find-slots (class-slots slots)
+  (cond ((null slots) T)
+        ((null class-slots) NIL)
+        ((if (member (first (first slots)) (first class-slots))
+            (find-slots (rest (rest class-slots)) (rest (rest slots)))
+          NIL))))
 
 
 ;;; IS-CLASS
@@ -94,14 +104,6 @@
         ((not (is-class (first parents)))
          T)
         (T (validate-parents (rest parents)))))
-
-
-;; funzione che permette di recuperare tutti gli slots dei parents
-;; in modo da inserirli nella nuova classe appena creata.
-
-(defun get-all-parents-slots (parents)
-  (append (list (second (get-classs-specs (first parents)))
-                (get-all-parents-slots (rest parents)))))
 
 
 ;; verifico se la lista dei slots è pari. In caso affermativo, creo una associazione tra 

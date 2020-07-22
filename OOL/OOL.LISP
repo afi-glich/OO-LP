@@ -43,6 +43,14 @@
              (append (list 'oolinst class-name (validate-slots (car slot-values))))
            (error "Slots not valid.")))))
 
+;;faccio la ricerca depth first dei parents.
+
+(defun depth-first-search(class)
+  (if (null (first (get-class-spec class)))
+       (list class)
+     (append (list class (mapcan #'depth-first-search(first (get-class-spec class)))))))
+
+
 ;; cerca che tutti gli slot della lista specificata in new sono effettivamente slots 
 ;; della classe. Se non li trova allora li cerca tra i parents. 
 
@@ -65,8 +73,6 @@
 
 ;;; IS-INSTANCE
 
-;;; da rivedere per capire come ricercare i parametri già creati in precedenza.
-
 (defun is-instance (value &optional (class-name T))
   (cond ((eql class-name T)
         (if (not (eql (first value) 'oolinst))
@@ -81,13 +87,23 @@
 ;; <<
 
 (defun << (instance slot-name)
-  (find-s (car (third instance)) slot-name))
+  (extract-value (car (third instance)) slot-name))
 
+
+;; <<*
+
+(defun <<* (instance &rest slot-name+)
+  (cond ((null slot-name+) 
+         (error "Slot name is not a valid list."))
+        ((= 1 (length slot-name+))
+         (<< instance (car slot-name+)))
+        (T
+         (<< instance (<< instance (cdr slot-name+))))))
 
 
 ;; verifica se lo slot name è presente tra i parameteri della istanza
 
-(defun find-s (slots slot-name)
+(defun extract-value (slots slot-name)
   (cond ((null slots)
          (error "nessun parametro trovato nell'istanza"))
         (T (if (equalp (first slots) slot-name)
