@@ -24,9 +24,9 @@
          (error "Class already exists"))
         ((validate-parents parents)
          (error "Parents list not valid"))
-        (T (print (validate-slots (car slot-value)))
+        (T 
            (add-class-spec class-name (list parents 
-                                            (validate-slots (car slot-value)))))))
+                                            (validate-slots slot-value))))))
 
 
 ;; NEW
@@ -39,16 +39,12 @@
         ((null (is-class class-name))
          (error "Class does not exist"))
         (T
-         (if (find-slots (second (get-class-spec class-name)) slot-values)
-             (append (list 'oolinst class-name (validate-slots (car slot-values))))
+         (if (find-slots (append
+                          (second (get-class-spec class-name))
+                          (depth-first-slots class-name))
+                         slot-values)
+             (append (list 'oolinst class-name (validate-slots slot-values)))
            (error "Slots not valid.")))))
-
-;;faccio la ricerca depth first dei parents.
-
-(defun depth-first-search(class)
-  (if (null (first (get-class-spec class)))
-       (list class)
-     (append (list class (mapcan #'depth-first-search(first (get-class-spec class)))))))
 
 
 ;; cerca che tutti gli slot della lista specificata in new sono effettivamente slots 
@@ -57,7 +53,7 @@
 (defun find-slots (class-slots slots)
   (cond ((null slots) T)
         ((null class-slots) NIL)
-        ((if (member (first (first slots)) (first class-slots))
+        ((if (member (first slots) (first class-slots))
             (find-slots (rest (rest class-slots)) (rest (rest slots)))
           NIL))))
 
@@ -92,48 +88,85 @@
 
 ;; <<*
 
-(defun <<* (instance &rest slot-name+)
+(defun jaghsa (instance &rest slot-name+)
   (cond ((null slot-name+) 
          (error "Slot name is not a valid list."))
         ((= 1 (length slot-name+))
          (<< instance (car slot-name+)))
         (T
-         (<< instance (<< instance (cdr slot-name+))))))
+         (<< (<< instance (car slot-name+)) (cdr slot-name+)))))
 
 
 ;; verifica se lo slot name è presente tra i parameteri della istanza
 
 (defun extract-value (slots slot-name)
   (cond ((null slots)
-         (error "nessun parametro trovato nell'istanza"))
+         (error "Slot does not exist."))
         (T (if (equalp (first slots) slot-name)
                (second slots)
-             (find (rest (rest slots)) slot-name)))))
-           
-
+             (extract-value (rest (rest slots)) slot-name)))))
+          
 
 
 ;; verify if all the parents in the list are classes already exists
 
 (defun validate-parents (parents)
   (cond ((null parents) NIL)
-        ((not (is-class (first parents)))
-         T)
+        ((not (is-class (first parents))) T)
         (T (validate-parents (rest parents)))))
+
 
 
 ;; verifico se la lista dei slots è pari. In caso affermativo, creo una associazione tra 
 ;; slot name e slot
 
 (defun validate-slots (slots)
+(print slots)
   (cond ((oddp (length slots))
          (error "Slot list is not complete"))
-        ((= 2 (length slots))
-         (append (list (list (first slots) (second slots)))))
+        ((null slots) slots)
+        ((listp (second slots))
+         (equalp (first (second slots)) '=>)
+         (process-method (first slots) (second slots)))
+        #| ((= 2 (length slots))
+         (list slots)) |#
         (T
          (if (symbolp (first slots))
              (append (list (list (first slots) (second slots)))
                    (validate-slots (rest (rest slots))))
            (error "Slot name not valid")))))
+
+
+
+;;faccio la ricerca depth first dei parents per estrarre gli slot.
+
+(defun depth-first-slots (class)
+  (if (null (first (get-class-spec class)))
+       (list (second (get-class-spec class)))
+     (append (list (second (get-class-spec class))) 
+                   (mapcan #'depth-first-slots (first (get-class-spec class))))))
+
+
+;; metodo per la manipolazione dei metodi
+
+(defun process-method (method-name method-spec)
+  (setf (fdefinition method-name) 
+        (lambda (this &rest arguments)
+          (print "ciao")
+          (apply (<< this method-name) (append (list this) arguments))))
+  (eval (rewrite-method-code method-name method-spec)))
+
+
+(defun rewrite-method-code (method-name method-spec)
+  (append 
+   (list 'lambda) 
+   (append (list 'this) (first (rest  method-spec)))
+   (rest (rest method-spec))))
+
+
+
+
+
+
 
 
