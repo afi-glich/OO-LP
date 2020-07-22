@@ -67,10 +67,13 @@
                T
              nil))))
 
+
 ;; <<
 
 (defun << (instance slot-name)
   (find-s (car (third instance)) slot-name))
+
+
 
 ;; verifica se lo slot name è presente tra i parameteri della istanza
 
@@ -83,6 +86,7 @@
            
 
 
+
 ;; verify if all the parents in the list are classes already exists
 
 (defun validate-parents (parents)
@@ -90,6 +94,15 @@
         ((not (is-class (first parents)))
          T)
         (T (validate-parents (rest parents)))))
+
+
+;; funzione che permette di recuperare tutti gli slots dei parents
+;; in modo da inserirli nella nuova classe appena creata.
+
+(defun get-all-parents-slots (parents)
+  (append (list (second (get-classs-specs (first parents)))
+                (get-all-parents-slots (rest parents)))))
+
 
 ;; verifico se la lista dei slots è pari. In caso affermativo, creo una associazione tra 
 ;; slot name e slot
